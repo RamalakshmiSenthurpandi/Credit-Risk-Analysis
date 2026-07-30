@@ -113,21 +113,6 @@ streamlit run app.py
 
 ---
 
-## Screenshots
-
-Place the application screenshots in the `images` folder.
-
-Example:
-
-```text
-images/
-├── home.png
-├── prediction.png
-└── result.png
-```
-
----
-
 ## Future Enhancements
 
 * Improve prediction accuracy using additional public datasets.
