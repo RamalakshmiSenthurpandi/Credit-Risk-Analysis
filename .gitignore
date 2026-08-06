@@ -17,14 +17,6 @@ venv/
 
 .vscode/
 
-# macOS
-
-.DS_Store
-
-# Model cache
-
-*.log
-
 # Streamlit
 
 .streamlit/secrets.toml
@@ -34,6 +26,3 @@ venv/
 data/*.xlsx
 data/*.csv
 
-# Exceptions
-
-!data/sample_dataset.csv
