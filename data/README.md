@@ -1,5 +1,5 @@
 # Dataset
 
-The original dataset (`Merged_data.xlsx`) is not included in this repository due to data privacy and confidentiality requirements.
+The original dataset used in this project is confidential and cannot be shared publicly.
 
-To run this project, place your dataset in this folder using the same filename expected by the application.
+To test the application, place your own dataset in this folder with the expected column structure.
