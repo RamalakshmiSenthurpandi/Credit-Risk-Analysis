@@ -3,9 +3,9 @@ import pandas as pd
 import joblib
 import os
 
-# ---------------------------
-# Page Configuration
-# ---------------------------
+# -------------------------------
+# PAGE CONFIGURATION
+# -------------------------------
 st.set_page_config(
     page_title="Credit Risk Analysis",
     page_icon="💳",
@@ -13,67 +13,82 @@ st.set_page_config(
 )
 
 st.title("💳 Credit Risk Analysis")
-st.write("Predict whether a customer is likely to be **Good Debt** or **Bad Debt**.")
+st.write("Predict whether a customer is **Good Debt** or **Bad Debt**.")
 
-# ---------------------------
-# Upload Dataset
-# ---------------------------
+# -------------------------------
+# LOAD MODEL
+# -------------------------------
+MODEL_PATH = "models/model.pkl"
+COLUMNS_PATH = "models/columns.pkl"
+
+if not os.path.exists(MODEL_PATH):
+    st.error("model.pkl not found.")
+    st.stop()
+
+if not os.path.exists(COLUMNS_PATH):
+    st.error("columns.pkl not found.")
+    st.stop()
+
+model = joblib.load(MODEL_PATH)
+model_columns = joblib.load(COLUMNS_PATH)
+
+# -------------------------------
+# FILE UPLOAD
+# -------------------------------
 uploaded_file = st.file_uploader(
-    "Upload Customer Dataset (Excel)",
+    "Upload Excel Dataset",
     type=["xlsx"]
 )
 
 if uploaded_file is None:
-    st.info("Please upload the dataset to continue.")
+    st.info("Please upload your dataset.")
     st.stop()
 
-# Read dataset
 df = pd.read_excel(uploaded_file)
 
-st.success("Dataset uploaded successfully!")
+# Remove spaces in column names
+df.columns = df.columns.str.strip()
 
-st.subheader("Dataset Preview")
-st.dataframe(df.head())
+st.success("Dataset uploaded successfully.")
 
-# ---------------------------
-# Detect Customer ID
-# ---------------------------
-cust_col = next(
-    (c for c in df.columns if "customer" in c.lower()),
-    None
-)
+# -------------------------------
+# REMOVE EXTRA COLUMNS
+# -------------------------------
+df = df.drop(columns=["TARGET", "OUTCOME"], errors="ignore")
 
-if cust_col is None:
-    st.error("Customer ID column not found.")
-    st.stop()
+# -------------------------------
+# NUMERIC COLUMNS
+# -------------------------------
+numeric_cols = df.select_dtypes(include="number").columns.tolist()
 
-# ---------------------------
-# Load Model
-# ---------------------------
-MODEL_PATH = "models/model.pkl"
-COL_PATH = "models/columns.pkl"
+if "Customer" in numeric_cols:
+    numeric_cols.remove("Customer")
 
-if not os.path.exists(MODEL_PATH):
-    st.warning("Model not found.")
-    st.info("Train the model first using the notebook.")
-    st.stop()
+agg = {c: "mean" for c in numeric_cols}
 
-model = joblib.load(MODEL_PATH)
-columns = joblib.load(COL_PATH)
+# -------------------------------
+# CUSTOMER LEVEL DATA
+# -------------------------------
+df_cust = df.groupby("Customer", as_index=False).agg(agg)
 
-# ---------------------------
-# Customer Selection
-# ---------------------------
+customer_list = sorted(df_cust["Customer"].astype(str).unique())
+
 customer_id = st.selectbox(
     "Select Customer ID",
-    df[cust_col].astype(str).unique()
+    customer_list
 )
 
-row = df[df[cust_col].astype(str) == customer_id]
-
+# -------------------------------
+# PREDICT
+# -------------------------------
 if st.button("Predict"):
 
-    X = row[columns]
+    row = df_cust[df_cust["Customer"].astype(str) == customer_id]
+
+    X = row.drop(columns=["Customer"], errors="ignore")
+
+    # Keep only model features
+    X = X[model_columns]
 
     prediction = model.predict(X)[0]
     probability = model.predict_proba(X)[0][1]
@@ -91,8 +106,6 @@ if st.button("Predict"):
     )
 
     st.progress(float(probability))
-
-    st.write("---")
 
     st.subheader("Customer Details")
 
